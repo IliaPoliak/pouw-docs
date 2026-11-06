@@ -1,0 +1,37 @@
+{
+  "hash": "blk:02ac3bd0c8ab4ad5d0025cf2b9930c6900d390c53a2f94d05f4884f6be0b1fb1",
+  "header": {
+    "chain_id": 1,
+    "height": 15,
+    "miner": "addr:66be7e332c7a453332bd9d0a7f7db055f5c5ef1a06ada66d98b39fb6810c473a",
+    "nonce": 7,
+    "parent": "blk:0aeb6e93a181f76d1e4050d73aaf3b4585d4679c246e147e7b6969dcd03b3624",
+    "system_id": 0,
+    "target": "0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "timestamp": 1793600150,
+    "tx_root": "b09d1de0b9b1f64d8676547f383ad2f6013bb49cb63a7ad1c11242e5e5a62065",
+    "version": 1
+  },
+  "proof_txs": [
+    {
+      "proof": "lSW3s7Fm5Ph6lTk1Zuz3D8hm8CeoJMkg0cSZz2lKkdg=",
+      "request": {
+        "body": {
+          "chain_id": 1,
+          "circuit": "circ:91d053a00304d32db9beb427bd012c27cc8b572c49cdc7dd874d7620203adc03",
+          "fee": 5,
+          "kind": "proof_request",
+          "nonce": 5,
+          "public_inputs": [
+            "0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f"
+          ],
+          "sender": "addr:8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c",
+          "witness": "AQIDDw=="
+        },
+        "signature": "ZqgAOZ9Ak1tGA5iONugLIvmSOwjNWY5ceFAmFV4mjx1CVVAndJc5xU4Njr7aRPmGrJQN9RZK3ROYvzqrqCSVDw=="
+      },
+      "usage_counter": 2
+    }
+  ],
+  "txs": []
+}
