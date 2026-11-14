@@ -6,9 +6,13 @@ useDefault = true
 
 # The contracts show example JSON with verifying keys, proofs and circuits in
 # base64 (e.g. contracts/node-api.md, "verifying_key"). The generic rule takes
-# such long random strings for API keys. Only that rule is off there: real
+# such long random strings for API keys. The fixtures (contracts/fixtures/*.json)
+# hold the same data: the verifying key of the mock circuit. Only that rule is off there: real
 # credentials (AWS, GitHub, private keys, ...) are still detected in contracts/.
 [[allowlists]]
 description = "Example base64 data in the contracts"
 targetRules = ["generic-api-key"]
-paths = ['''(^|/)contracts/[^/]+\.md$''']
+paths = [
+  '''(^|/)contracts/[^/]+\.md$''',
+  '''(^|/)contracts/fixtures/.+\.json$''',
+]
