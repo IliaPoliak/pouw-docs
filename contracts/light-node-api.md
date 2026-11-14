@@ -41,9 +41,9 @@ All paths have the prefix `/v1`. All are `GET` and read-only.
 
 | Path | Purpose | Answer |
 | --- | --- | --- |
-| `/v1/light/head` | chain head: tip hash and height, chain id | [Head](#head) |
-| `/v1/blocks/{height_or_hash}/header` | header of one block | `{ "hash", "header" }`, see [node-api.md] |
-| `/v1/blocks/{height_or_hash}` | full block, borsh or JSON | [node-api.md] block view |
+| `/v1/light/head` | chain head: tip id and height, chain id | [Head](#head) |
+| `/v1/blocks/{height_or_id}/header` | header of one block | `{ "id", "header" }`, see [node-api.md] |
+| `/v1/blocks/{height_or_id}` | full block, borsh or JSON | [node-api.md] block view |
 | `/v1/headers?from=&to=` | headers in a range, at most 1000 | `{ "headers": [ ... ] }` |
 | `/v1/accounts/{addr}` | balance and nonce | [node-api.md] account view |
 | `/v1/txs/{txid}` | transaction and its status | [node-api.md] tx view |
@@ -62,8 +62,8 @@ Rules:
   transactions. A client that sends several transactions in a row counts the
   nonce itself.
 - An answer is valid only for the head it was read at. A client that needs
-  consistency between two calls compares `hash` of the head before and after.
-- Nothing here is trusted by itself. A client checks `prev_hash` links of the
+  consistency between two calls compares `id` of the head before and after.
+- Nothing here is trusted by itself. A client checks `parent` links of the
   headers and the inclusion proof against `tx_root` as in
   [the light client flow][flow]. Balance and nonce have no proof in version 1
   (open point).
@@ -72,9 +72,9 @@ Rules:
 
 ```json
 {
-  "chain_id": 1,
-  "height": 12,
-  "hash": "blk:dd532958f6a2a903a20f7f7923be98a644f600624193f181ddfe31cb4f53b8b7"
+  "chain_id": 4242,
+  "height": 19,
+  "id": "blk:02a0a96c92e77c61eba286ea33f748d71bf8dbea317de052491a26dce496ee38"
 }
 ```
 
@@ -91,11 +91,11 @@ job:
 
 ```json
 {
-  "txid": "tx:4804e3ae090e3fb82de9a66aca0543c39d1ffff786133871f382ed612053687a",
+  "txid": "tx:61885876c6741433b41af9534b709f4e100743bf2a12d18df406c028f24c0488",
   "status": "included",
-  "proof_hash": "proof:26a854c7af0a340d5e77269a060fdd235f856c56c90830da9fc0aaea6f967563",
-  "height": 12,
-  "block": "blk:dd532958f6a2a903a20f7f7923be98a644f600624193f181ddfe31cb4f53b8b7"
+  "proof_hash": "proof:3d06c4e368e779ea4b060bb83c1d0eedbcaf251c60d9b66d7a1c426858ead9ba",
+  "height": 3,
+  "block": "blk:02220a3e49805b849b37d48debc71ef5a75f03aef88c06b7428cf0a031100e4c"
 }
 ```
 
@@ -111,7 +111,7 @@ Same shape as everywhere: `{"error": {"code": "<snake_case>", "message": "..."}}
 | HTTP | `code` | When |
 | --- | --- | --- |
 | 400 | `bad_request` | an id or a number does not parse |
-| 404 | `unknown_block` | height or hash not known |
+| 404 | `unknown_block` | height or id not known |
 | 404 | `unknown_account` | address never seen |
 | 404 | `unknown_tx` | txid never seen |
 | 404 | `unknown_proof_job` | not a proof request or never seen |
