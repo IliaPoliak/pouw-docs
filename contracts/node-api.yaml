@@ -11,6 +11,8 @@ info:
     no hash or signature is computed over JSON text.
     Explanation of the flows: node-api.md. Event log detail: node-events.md.
     Status: proposed.
+    The blocks are the proof-of-work blocks the node produces today. The PoUW
+    header of block.md comes later.
 servers:
   - url: http://localhost:8080
     description: Local node (example)
@@ -117,13 +119,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HeaderView'
-  /v1/blocks/{height_or_hash}:
+  /v1/blocks/{height_or_id}:
     get:
       tags: [chain]
       operationId: getBlock
       summary: Full decoded block
       parameters:
-        - $ref: '#/components/parameters/HeightOrHashPath'
+        - $ref: '#/components/parameters/HeightOrIdPath'
       responses:
         '200':
           description: The block, as borsh or as the JSON view.
@@ -138,16 +140,16 @@ paths:
                 $ref: '#/components/schemas/Block'
         '400': {$ref: '#/components/responses/BadRequest'}
         '404': {$ref: '#/components/responses/NotFound'}
-  /v1/blocks/{height_or_hash}/header:
+  /v1/blocks/{height_or_id}/header:
     get:
       tags: [chain]
       operationId: getBlockHeader
       summary: Header of one block
       parameters:
-        - $ref: '#/components/parameters/HeightOrHashPath'
+        - $ref: '#/components/parameters/HeightOrIdPath'
       responses:
         '200':
-          description: The header, as borsh or as the JSON view with its hash.
+          description: The header, as borsh or as the JSON view with its id.
           content:
             application/octet-stream:
               schema:
@@ -394,17 +396,17 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/TxId'
-    HeightOrHashPath:
-      name: height_or_hash
+    HeightOrIdPath:
+      name: height_or_id
       in: path
       required: true
-      description: A decimal height or a block hash with the `blk:` prefix.
+      description: A decimal height or a block id with the `blk:` prefix.
       schema:
         type: string
         pattern: '^([0-9]{1,20}|blk:[0-9a-f]{64})$'
         minLength: 1
         maxLength: 68
-        examples: ['12', 'blk:dd532958f6a2a903a20f7f7923be98a644f600624193f181ddfe31cb4f53b8b7']
+        examples: ['3', 'blk:02220a3e49805b849b37d48debc71ef5a75f03aef88c06b7428cf0a031100e4c']
     From:
       name: from
       in: query
@@ -452,41 +454,48 @@ components:
       minLength: 67
       maxLength: 67
       description: sha256 of the borsh bytes of a SignedTx.
-      examples: ['tx:4804e3ae090e3fb82de9a66aca0543c39d1ffff786133871f382ed612053687a']
-    BlockHash:
+      examples: ['tx:61885876c6741433b41af9534b709f4e100743bf2a12d18df406c028f24c0488']
+    BlockId:
       type: string
       pattern: '^blk:[0-9a-f]{64}$'
       minLength: 68
       maxLength: 68
       description: sha256 of the borsh bytes of a BlockHeader.
-      examples: ['blk:dd532958f6a2a903a20f7f7923be98a644f600624193f181ddfe31cb4f53b8b7']
+      examples: ['blk:02220a3e49805b849b37d48debc71ef5a75f03aef88c06b7428cf0a031100e4c']
     ProofHash:
       type: string
       pattern: '^proof:[0-9a-f]{64}$'
       minLength: 70
       maxLength: 70
       description: sha256 of the borsh bytes of a ProofTx. The Merkle leaf id of a proof tx.
-      examples: ['proof:26a854c7af0a340d5e77269a060fdd235f856c56c90830da9fc0aaea6f967563']
+      examples: ['proof:3d06c4e368e779ea4b060bb83c1d0eedbcaf251c60d9b66d7a1c426858ead9ba']
     CircuitId:
       type: string
       pattern: '^circ:[0-9a-f]{64}$'
       minLength: 69
       maxLength: 69
       description: The txid hash of the RegisterCircuit transaction.
-      examples: ['circ:710347f25bec15b1dce6bed71a7ab719739f0011cda6830e5eb7d3d01b000590']
+      examples: ['circ:08da3fa19442869c4c6bc7ca96d3cc0277acb724a2b1bd01ed173b469e7f091c']
     Address:
       type: string
       pattern: '^addr:[0-9a-f]{64}$'
       minLength: 69
       maxLength: 69
       description: An Ed25519 public key.
-      examples: ['addr:8fac0a4f4ac266a66249d7c30853b8aafefa405e9f2603b0f820100f34296e29']
+      examples: ['addr:8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c']
     Hash32:
       type: string
       pattern: '^[0-9a-f]{64}$'
       minLength: 64
       maxLength: 64
       description: A SHA-256 output as lowercase hex, without prefix.
+    Target:
+      type: string
+      pattern: '^[0-9a-f]{64}$'
+      minLength: 64
+      maxLength: 64
+      description: A 256-bit number as lowercase hex, no prefix. The block id, read as a big-endian number, must not exceed it.
+      examples: ['0fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff']
     Witness:
       type: string
       contentEncoding: base64
@@ -525,7 +534,7 @@ components:
       maxLength: 62
       description: |
         A 248-bit field element input: the 31 bytes of the FieldInput verbatim, in borsh byte order (little-endian), no prefix.
-      examples: ['8dcdb5739ba01795ab4e12cb8b6406369ff7169af06a04bdac5fa26bd7bc19']
+      examples: ['e9cb0a398184a0c90691827cfb087f938e09811966e3f325b970ea7503cbf4']
     Amount:
       type: integer
       minimum: 0
@@ -700,31 +709,53 @@ components:
     BlockHeader:
       type: object
       additionalProperties: false
-      required: [version, height, prev_hash, timestamp, miner, difficulty, bucket_count, bucket_id, tx_count, tx_root]
+      description: |
+        Header of a proof-of-work block, as the node produces it today. The id
+        of the block is the SHA-256 of the borsh bytes of this header. The PoUW
+        header of block.md (`difficulty`, buckets, `tx_count`) is not built yet.
+      required: [version, chain_id, system_id, height, parent, timestamp, miner, tx_root, target, nonce]
       properties:
         version: {type: integer, minimum: 1, maximum: 1}
+        chain_id:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: Must equal the chain id of the node.
+        system_id:
+          type: integer
+          minimum: 0
+          maximum: 18446744073709551615
+          description: Proof system of the work in the block. 0 in version 1.
         height: {$ref: '#/components/schemas/Height'}
-        prev_hash: {$ref: '#/components/schemas/BlockHash'}
+        parent:
+          $ref: '#/components/schemas/BlockId'
+          description: Id of the parent block. `blk:` and 64 zeros in the genesis block.
         timestamp: {$ref: '#/components/schemas/Timestamp'}
-        miner: {$ref: '#/components/schemas/Address'}
-        difficulty: {type: integer, minimum: 0, maximum: 18446744073709551615}
-        bucket_count: {type: integer, minimum: 0, maximum: 4294967295}
-        bucket_id: {type: integer, minimum: 0, maximum: 4294967295}
-        tx_count: {type: integer, minimum: 0, maximum: 4294967295}
-        tx_root: {$ref: '#/components/schemas/Hash32'}
+        miner:
+          $ref: '#/components/schemas/Address'
+          description: Receives the block reward and all fees.
+        tx_root:
+          $ref: '#/components/schemas/Hash32'
+          description: sha256(0x02 || u32le(leaf_count) || merkle_root), over `txs`, then `proof_txs` (tree of RFC 6962, as in block.md).
+        target: {$ref: '#/components/schemas/Target'}
+        nonce:
+          type: integer
+          minimum: 0
+          maximum: 18446744073709551615
+          description: Varied by the miner.
     HeaderView:
       type: object
       additionalProperties: false
-      required: [hash, header]
+      required: [id, header]
       properties:
-        hash: {$ref: '#/components/schemas/BlockHash'}
+        id: {$ref: '#/components/schemas/BlockId'}
         header: {$ref: '#/components/schemas/BlockHeader'}
     Block:
       type: object
       additionalProperties: false
-      required: [hash, header, txs, proof_txs]
+      required: [id, header, txs, proof_txs]
       properties:
-        hash: {$ref: '#/components/schemas/BlockHash'}
+        id: {$ref: '#/components/schemas/BlockId'}
         header: {$ref: '#/components/schemas/BlockHeader'}
         txs:
           type: array
@@ -762,16 +793,23 @@ components:
     InclusionProof:
       type: object
       additionalProperties: false
-      required: [height, index, siblings]
+      required: [height, index, leaf_count, siblings]
       description: |
         Merkle audit path. The verifier takes the leaf id (the txid hash, or
         the proof tx hash for a proof request) and combines it with each
         sibling from the bottom up. The side of each sibling follows from
-        `index`. The result must equal `tx_root` of the header at `height`.
-        The algorithm is in block.md.
+        `index`, and the number of leaves is `leaf_count`. The result is bound
+        with the count, `sha256(0x02 || u32le(leaf_count) || result)`, and must
+        equal `tx_root` of the header at `height`. The tree is the one of
+        block.md.
       properties:
         height: {$ref: '#/components/schemas/Height'}
         index: {type: integer, minimum: 0, maximum: 4294967295}
+        leaf_count:
+          type: integer
+          minimum: 1
+          maximum: 4294967295
+          description: Leaves of the tree of the block (`txs` plus `proof_txs`). The proof-of-work header has no `tx_count`; `tx_root` commits to it.
         siblings:
           type: array
           maxItems: 10

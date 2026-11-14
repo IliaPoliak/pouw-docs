@@ -242,14 +242,14 @@ The node received a block from a peer, before verifying it.
 
 | field | type |
 | --- | --- |
-| `hash` | `blk:` id |
+| `id` | `blk:` id |
 | `height` | u64 |
 | `from_peer` | string, peer id |
 
 ```json
 { "seq": 46, "time": "2026-10-19T14:03:33.010Z", "node_id": "node-a",
   "kind": "block_received",
-  "data": { "hash": "blk:51de...a0", "height": 812, "from_peer": "peer-miner-1" } }
+  "data": { "id": "blk:51de...a0", "height": 812, "from_peer": "peer-miner-1" } }
 ```
 
 ### block_verified
@@ -258,7 +258,7 @@ The node finished verifying a block, valid or not.
 
 | field | type |
 | --- | --- |
-| `hash` | `blk:` id |
+| `id` | `blk:` id |
 | `height` | u64 |
 | `verify_ms` | u64, wall time of the whole verification |
 | `proof_count` | u64, proof txs checked |
@@ -267,7 +267,7 @@ The node finished verifying a block, valid or not.
 ```json
 { "seq": 47, "time": "2026-10-19T14:03:33.190Z", "node_id": "node-a",
   "kind": "block_verified",
-  "data": { "hash": "blk:51de...a0", "height": 812, "verify_ms": 168,
+  "data": { "id": "blk:51de...a0", "height": 812, "verify_ms": 168,
             "proof_count": 3, "ok": true } }
 ```
 
@@ -277,19 +277,17 @@ The node added a block to its chain (its own or a peer's).
 
 | field | type |
 | --- | --- |
-| `hash` | `blk:` id |
+| `id` | `blk:` id |
 | `height` | u64 |
 | `miner` | `addr:` id |
 | `tx_count` | u64, entries of `txs` |
 | `proof_count` | u64, entries of `proof_txs` |
-| `bucket_count` | u32, `k` of ADR-0007 |
-| `bucket_id` | u32 |
 
 ```json
 { "seq": 48, "time": "2026-10-19T14:03:33.205Z", "node_id": "node-a",
   "kind": "block_accepted",
-  "data": { "hash": "blk:51de...a0", "height": 812, "miner": "addr:c0d3...18",
-            "tx_count": 4, "proof_count": 3, "bucket_count": 8, "bucket_id": 5 } }
+  "data": { "id": "blk:51de...a0", "height": 812, "miner": "addr:c0d3...18",
+            "tx_count": 4, "proof_count": 3 } }
 ```
 
 ### block_rejected
@@ -299,14 +297,14 @@ read.
 
 | field | type |
 | --- | --- |
-| `hash` | `blk:` id |
+| `id` | `blk:` id |
 | `height` | u64, optional |
 | `reason_code` | string |
 
 ```json
 { "seq": 49, "time": "2026-10-19T14:03:40.330Z", "node_id": "node-a",
   "kind": "block_rejected",
-  "data": { "hash": "blk:0b9c...f4", "height": 813, "reason_code": "invalid_proof" } }
+  "data": { "id": "blk:0b9c...f4", "height": 813, "reason_code": "invalid_proof" } }
 ```
 
 ### block_orphaned
@@ -315,13 +313,13 @@ Fork choice moved away from an accepted block.
 
 | field | type |
 | --- | --- |
-| `hash` | `blk:` id |
+| `id` | `blk:` id |
 | `height` | u64 |
 
 ```json
 { "seq": 50, "time": "2026-10-19T14:03:52.480Z", "node_id": "node-a",
   "kind": "block_orphaned",
-  "data": { "hash": "blk:51de...a0", "height": 812 } }
+  "data": { "id": "blk:51de...a0", "height": 812 } }
 ```
 
 ### proof_verified
@@ -434,7 +432,7 @@ JSON Schema draft 2020-12 for one event. A response body is
   ],
   "$defs": {
     "TxId": { "type": "string", "pattern": "^tx:[0-9a-f]{64}$" },
-    "BlockHash": { "type": "string", "pattern": "^blk:[0-9a-f]{64}$" },
+    "BlockId": { "type": "string", "pattern": "^blk:[0-9a-f]{64}$" },
     "CircuitId": { "type": "string", "pattern": "^circ:[0-9a-f]{64}$" },
     "Address": { "type": "string", "pattern": "^addr:[0-9a-f]{64}$" },
     "ProofHash": { "type": "string", "pattern": "^proof:[0-9a-f]{64}$" },
@@ -496,18 +494,18 @@ JSON Schema draft 2020-12 for one event. A response body is
     },
     "block_received": {
       "type": "object", "additionalProperties": false,
-      "required": ["hash", "height", "from_peer"],
+      "required": ["id", "height", "from_peer"],
       "properties": {
-        "hash": { "$ref": "#/$defs/BlockHash" },
+        "id": { "$ref": "#/$defs/BlockId" },
         "height": { "$ref": "#/$defs/U64" },
         "from_peer": { "type": "string" }
       }
     },
     "block_verified": {
       "type": "object", "additionalProperties": false,
-      "required": ["hash", "height", "verify_ms", "proof_count", "ok"],
+      "required": ["id", "height", "verify_ms", "proof_count", "ok"],
       "properties": {
-        "hash": { "$ref": "#/$defs/BlockHash" },
+        "id": { "$ref": "#/$defs/BlockId" },
         "height": { "$ref": "#/$defs/U64" },
         "verify_ms": { "$ref": "#/$defs/U64" },
         "proof_count": { "$ref": "#/$defs/U64" },
@@ -516,31 +514,29 @@ JSON Schema draft 2020-12 for one event. A response body is
     },
     "block_accepted": {
       "type": "object", "additionalProperties": false,
-      "required": ["hash", "height", "miner", "tx_count", "proof_count", "bucket_count", "bucket_id"],
+      "required": ["id", "height", "miner", "tx_count", "proof_count"],
       "properties": {
-        "hash": { "$ref": "#/$defs/BlockHash" },
+        "id": { "$ref": "#/$defs/BlockId" },
         "height": { "$ref": "#/$defs/U64" },
         "miner": { "$ref": "#/$defs/Address" },
         "tx_count": { "$ref": "#/$defs/U64" },
-        "proof_count": { "$ref": "#/$defs/U64" },
-        "bucket_count": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
-        "bucket_id": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+        "proof_count": { "$ref": "#/$defs/U64" }
       }
     },
     "block_rejected": {
       "type": "object", "additionalProperties": false,
-      "required": ["hash", "reason_code"],
+      "required": ["id", "reason_code"],
       "properties": {
-        "hash": { "$ref": "#/$defs/BlockHash" },
+        "id": { "$ref": "#/$defs/BlockId" },
         "height": { "$ref": "#/$defs/U64" },
         "reason_code": { "$ref": "#/$defs/ReasonCode" }
       }
     },
     "block_orphaned": {
       "type": "object", "additionalProperties": false,
-      "required": ["hash", "height"],
+      "required": ["id", "height"],
       "properties": {
-        "hash": { "$ref": "#/$defs/BlockHash" },
+        "id": { "$ref": "#/$defs/BlockId" },
         "height": { "$ref": "#/$defs/U64" }
       }
     },
