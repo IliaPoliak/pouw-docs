@@ -219,6 +219,18 @@ proof time comes from the `proof_produced` event with the same
 `proof_hash`. Only the miner that made the attempt can report it, so the
 wasted-work metric counts only cooperating miners.
 
+A losing proof has a `reason`:
+
+| `reason` | meaning |
+| --- | --- |
+| `superseded` | the tip moved to a block of another miner before the block of this proof was found |
+| `request_gone` | the proof request left the mempool before a block took the proof |
+| `orphaned` | the block of this proof was in the chain and a reorganization dropped it |
+
+A proof that won can lose later. After a reorganization the same `proof_hash`
+gets a second `lottery_result` with `won: false` and `reason: "orphaned"`; the
+later event is the final state of that proof. A won proof has no `reason`.
+
 | field | type |
 | --- | --- |
 | `txid` | `tx:` id of the proof request |
@@ -228,12 +240,14 @@ wasted-work metric counts only cooperating miners.
 | `eta` | field element |
 | `mask` | field element |
 | `usage_counter` | u64 |
+| `reason` | reason code, optional: only when `won` is false, see above |
 
 ```json
 { "seq": 45, "time": "2026-10-19T14:03:31.700Z", "node_id": "miner-1",
   "kind": "lottery_result",
   "data": { "txid": "tx:3f0c...e1", "proof_hash": "proof:c41e...5d", "circuit": "circ:b8d2...90",
-            "won": false, "eta": "0x00a1...3c", "mask": "0x07f2...19", "usage_counter": 12 } }
+            "won": false, "reason": "superseded", "eta": "0x00a1...3c", "mask": "0x07f2...19",
+            "usage_counter": 12 } }
 ```
 
 ### block_received
@@ -487,6 +501,7 @@ JSON Schema draft 2020-12 for one event. A response body is
         "proof_hash": { "$ref": "#/$defs/ProofHash" },
         "circuit": { "$ref": "#/$defs/CircuitId" },
         "won": { "type": "boolean" },
+        "reason": { "$ref": "#/$defs/ReasonCode" },
         "eta": { "$ref": "#/$defs/FieldElement" },
         "mask": { "$ref": "#/$defs/FieldElement" },
         "usage_counter": { "$ref": "#/$defs/U64" }
